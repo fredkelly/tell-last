@@ -6,23 +6,31 @@ import (
   //"fmt"
   "net/http"
 
+  "crypto/hmac"
+  "crypto/sha256"
+  "encoding/hex"
+
   "github.com/go-martini/martini"
   fb "github.com/huandu/facebook"
 )
 
 func main() {
   // create a global App var to hold your app id and secret.
-  var globalApp = fb.New(os.Getenv("FACEBOOK_KEY"), os.Getenv("FACEBOOK_SECRET"))
-  globalApp.RedirectUri = "http://localhost:3000/auth/facebook/callback"
+  globalApp := fb.New(os.Getenv("FACEBOOK_APP_ID"), os.Getenv("FACEBOOK_SECRET"))
+  globalApp.RedirectUri = "http://localhost:3000/auth/facebook/callback" // TODO
+
+  // https://developers.facebook.com/docs/graph-api/securing-requests
+  globalApp.EnableAppsecretProof = true
 
   // instantiate Martini
   m := martini.Classic()
   m.Use(martini.Logger())
 
   m.Use(func(res http.ResponseWriter, req *http.Request) {
-    _, err := fb.Get("/me", fb.Params{
-      "access_token": req.Header.Get("Authorization"),
-    })
+    accessToken := req.Header.Get("Authorization") // TODO expect "Bearer: {TOKEN}" format?
+    session := globalApp.Session(accessToken)
+
+    _, err := session.Get("/me", nil)
 
     if err != nil {
       // err can be an facebook API error.
@@ -36,7 +44,7 @@ func main() {
   })
 
   m.Get("/", func() string {
-    return "Hello world!"
+    return "Hello world"
   })
 
   m.Run()
