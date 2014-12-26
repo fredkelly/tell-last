@@ -15,59 +15,43 @@
     <!-- cordova script (this will be a 404 during development) -->
     <script src="cordova.js"></script>
 
+    <!-- ng-facebook js -->
+    <script src="lib/ng-facebook/ngFacebook.js"></script>
+
     <!-- your app's js -->
     <script src="js/app.js"></script>
   </head>
   <body ng-app="tellLast">
-    <ion-tabs class="tabs-positive tabs-icon-only">
+    <div id="fb-root"></div>
 
-      <ion-tab ng-controller="TellCtrl" title="Tell" icon-on="ion-ios7-chatbubble" icon-off="ion-ios7-chatbubble-outline">
-        <!-- Tab 1 content -->
-        <ion-header-bar class="bar-positive">
-          <h1 class="title">Tell Last</h1>
-        </ion-header-bar>
-        <ion-content>
-          <form>
-            <fieldset>
-              <div class="row">
-                <label class="item item-input item-stacked-label col">
-                  <span class="input-label">From</span>
-                  <select ng-options="friend as friend.name for friend in friends" ng-model="from"></select>
-                </label>
-                <label class="item item-input item-stacked-label col">
-                  <span class="input-label">To</span>
-                  <select ng-options="friend as friend.name for friend in friends" ng-model="to"></select>
-                </label>
-              </div>
-              <div class="row">
-                <label class="item item-input col">
-                  <textarea name="body" ng-model="body" placeholder="Lovely thoughts about {{to.name}}.."></textarea>
-                </label>
-              </div>
-              <div class="row">
-                <button class="button button-block button-positive">Tell!</button>
-              </div>
-            </fieldset>
-          </form>
-        </ion-content>
+    <ion-nav-bar class="bar-positive">
+    </ion-nav-bar>
+
+    <ion-tabs class="tabs-positive">
+      <ion-tab icon="ion-navicon" ui-sref="inbox">
+        <ion-nav-view name="inbox"></ion-nav-view>
       </ion-tab>
-
-      <ion-tab ng-controller="InboxCtrl" title="Inbox" icon-on="ion-ios7-filing" icon-off="ion-ios7-filing-outline">
-        <!-- Tab 2 content -->
-        <ion-header-bar class="bar-positive">
-          <h1 class="title">Inbox</h1>
-        </ion-header-bar>
-        <ion-content>
-          <ion-list>
-            <ion-item ng-repeat="item in items" class="item-thumbnail-right">
-              <img src="http://graph.facebook.com/{{item.uuid}}/picture" />
-              <h2>{{item.title}}</h2>
-              <time datetime="{{item.created}}">{{item.created | date}}!</time>
-            </ion-item>
-          </ion-list>
-        </ion-content>
+      <ion-tab icon="ion-plus" ui-sref="new">
+        <ion-nav-view name="new"></ion-nav-view>
       </ion-tab>
-
     </ion-tabs>
+
+    <script type="text/ng-template" id="inbox.html">
+      <ion-view title="Inbox">
+        <ion-content padding="true">
+          <h2>Inbox</h2>
+          <p>Here's the main route for the app.</p>
+        </ion-content>
+      </ion-view>
+    </script>
+
+    <script type="text/ng-template" id="new.html">
+      <ion-view title="New">
+        <ion-content padding="true">
+           <h2>Tell</h2>
+           <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facilis architecto hic officia quasi excepturi sequi deleniti maiores consectetur veritatis sint?</p>
+        </ion-content>
+      </ion-view>
+    </script>
   </body>
 </html>
