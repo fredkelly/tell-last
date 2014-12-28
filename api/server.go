@@ -6,10 +6,6 @@ import (
   //"fmt"
   "net/http"
 
-  "crypto/hmac"
-  "crypto/sha256"
-  "encoding/hex"
-
   "github.com/go-martini/martini"
   fb "github.com/huandu/facebook"
 )
@@ -30,7 +26,9 @@ func main() {
     accessToken := req.Header.Get("Authorization") // TODO expect "Bearer: {TOKEN}" format?
     session := globalApp.Session(accessToken)
 
-    _, err := session.Get("/me", nil)
+    // TODO make currentUser globally available
+    // TODO add User struct and use res.Decode(&user)
+    currentUser, err := session.Get("/me", nil)
 
     if err != nil {
       // err can be an facebook API error.
@@ -41,10 +39,23 @@ func main() {
 
       res.WriteHeader(http.StatusUnauthorized)
     }
+
+    log.Printf("Logged in as: %s", currentUser["email"])
   })
 
   m.Get("/", func() string {
+    // serve SPA ?
     return "Hello world"
+  })
+
+  m.Get("/tells", func() string {
+    // get all tells for currentUser and render JSON array
+    return ""
+  })
+
+  m.Post("/tells", func(params martini.Params) string {
+    // create new tell for currentUser
+    return ""
   })
 
   m.Run()
