@@ -31,8 +31,8 @@ type User struct {
 
 type Tell struct {
   Id          int64   `db:"id" json:"id"`
-  ToId        int64   `db:"to_id" json:"to_id" form:"to_id"`
-  FromId      int64   `db:"from_id" json:"from_id" form:"from_id"`
+  ToUid       string  `db:"to_uid" json:"to_uid" form:"to_uid"`
+  FromUid     string  `db:"from_uid" json:"from_uid" form:"from_uid"`
   ReporterId  int64   `db:"reporter_id" json:"reporter_id,omitempty"`
   CreatedAt   int64   `db:"created_at" json:"created_at"`
   Body        string  `db:"body" json:"body" form:"body"`
@@ -87,7 +87,7 @@ func findOrCreateUser(attrs fb.Result) *User {
 // all tells addressed to you
 func (user User) getTells() []Tell {
   var tells []Tell
-  _, err := dbmap.Select(&tells, "SELECT * FROM tells WHERE to_id = ?", user.Id)
+  _, err := dbmap.Select(&tells, "SELECT * FROM tells WHERE to_uid = ?", user.Uid)
 
   if err != nil {
     log.Printf("error loading tells for user id=%s (%s)", user.Id, err)
@@ -184,6 +184,7 @@ func main() {
 
   m.Post("/tells", binding.Bind(Tell{}), func(enc encoder.Encoder, user *User, tell Tell) (int, []byte) {
     // create new tell for user
+    tell.ToId = 
     tell = user.Tell(tell)
     return http.StatusOK, encoder.Must(enc.Encode(tell))
   })
