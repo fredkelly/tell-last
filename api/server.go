@@ -61,9 +61,14 @@ func findOrCreateUser(attrs fb.Result) *User {
   user := &User{}
 
   user.Uid       = attrs["id"].(string)
-  user.Email     = attrs["email"].(string)
   user.FirstName = attrs["first_name"].(string)
   user.LastName  = attrs["last_name"].(string)
+
+  // Store an email if we get one..
+  // TODO complain if we don't?
+  if email, ok := attrs["email"]; ok {
+    user.Email = email.(string)
+  }
 
   err := dbmap.SelectOne(&user, "SELECT * FROM users WHERE uid = ?", user.Uid)
 
@@ -96,12 +101,13 @@ func main() {
   defer dbmap.Db.Close()
 
   // Authentication
-  m.Use(func(res http.ResponseWriter, req *http.Request) {
+  m.Use(func(c martini.Context, res http.ResponseWriter, req *http.Request) {
     accessToken := req.Header.Get("Authorization") // TODO expect "Bearer: {TOKEN}" format?
     session := globalApp.Session(accessToken)
 
     // TODO make currentUser globally available
     // TODO add User struct and use res.Decode(&user)
+    var user *User
     attrs, err := session.Get("/me", nil)
 
     if err != nil {
@@ -112,9 +118,10 @@ func main() {
       }
 
       res.WriteHeader(http.StatusUnauthorized)
+    } else {
+      user = findOrCreateUser(attrs)
+      c.Map(user)
     }
-
-    user := findOrCreateUser(attrs)
 
     if user != nil {
       log.Printf("Logged in as: %s", user.FirstName)
@@ -138,9 +145,9 @@ func main() {
     }
   })
 
-  m.Get("/", func() string {
+  m.Get("/", func(user *User) string {
     // serve SPA ?
-    return "Hello world"
+    return "Hello world" + user.FirstName
   })
 
   m.Get("/tells", func() string {
