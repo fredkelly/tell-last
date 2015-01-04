@@ -14,6 +14,7 @@ import (
 
   "github.com/go-martini/martini"
   "github.com/martini-contrib/encoder"
+  "github.com/martini-contrib/binding"
   fb "github.com/huandu/facebook"
 )
 
@@ -30,11 +31,11 @@ type User struct {
 
 type Tell struct {
   Id          int64   `db:"id" json:"id"`
-  ToId        string  `db:"to_id" json:"to_id"`
-  FromId      int64   `db:"from_id" json:"from_id"`
-  ReporterId  string  `db:"reporter_id" json:"reporter_id"`
+  ToId        int64   `db:"to_id" json:"to_id" form:"to_id"`
+  FromId      int64   `db:"from_id" json:"from_id" form:"from_id"`
+  ReporterId  int64   `db:"reporter_id" json:"reporter_id,omitempty"`
   CreatedAt   int64   `db:"created_at" json:"created_at"`
-  body        string  `db:"body" json:"body"`
+  Body        string  `db:"body" json:"body" form:"body"`
 }
 
 // Initialise DB and setup tables
@@ -83,6 +84,37 @@ func findOrCreateUser(attrs fb.Result) *User {
   return user
 }
 
+// all tells addressed to you
+func (user User) getTells() []Tell {
+  var tells []Tell
+  _, err := dbmap.Select(&tells, "SELECT * FROM tells WHERE to_id = ?", user.Id)
+
+  if err != nil {
+    log.Printf("error loading tells for user id=%s (%s)", user.Id, err)
+  }
+
+  return tells
+}
+
+// create new tell
+func (user User) Tell(tell Tell) Tell {
+  // set reported by current user
+  tell.ReporterId = user.Id
+
+  err := dbmap.Insert(&tell)
+
+  if err != nil {
+    log.Printf("error inserting tell for user id=%s (%s)", user.Id, err)
+  }
+
+  return tell
+}
+
+func (tell Tell) Filter() interface{} {
+  tell.ReporterId = -1
+  return tell
+}
+
 func main() {
   // TODO move to own handler
   // create a global App var to hold your app id and secret.
@@ -124,7 +156,7 @@ func main() {
     }
 
     if user != nil {
-      log.Printf("Logged in as: %s", user.FirstName)
+      log.Printf("Logged in as: %s %s", user.FirstName, user.LastName)
     }
   })
 
@@ -134,15 +166,9 @@ func main() {
     pretty, _ := strconv.ParseBool(r.FormValue("pretty"))
     // Use null instead of empty object for json &null=1
     null, _ := strconv.ParseBool(r.FormValue("null"))
-    // Some content negotiation
-    switch r.Header.Get("Content-Type") {
-    case "application/xml":
-      c.MapTo(encoder.XmlEncoder{PrettyPrint: pretty}, (*encoder.Encoder)(nil))
-      w.Header().Set("Content-Type", "application/xml; charset=utf-8")
-    default:
-      c.MapTo(encoder.JsonEncoder{PrettyPrint: pretty, PrintNull: null}, (*encoder.Encoder)(nil))
-      w.Header().Set("Content-Type", "application/json; charset=utf-8")
-    }
+    // JSON no matter what
+    c.MapTo(encoder.JsonEncoder{PrettyPrint: pretty, PrintNull: null}, (*encoder.Encoder)(nil))
+    w.Header().Set("Content-Type", "application/json; charset=utf-8")
   })
 
   m.Get("/", func(user *User) string {
@@ -150,14 +176,16 @@ func main() {
     return "Hello world" + user.FirstName
   })
 
-  m.Get("/tells", func() string {
-    // get all tells for currentUser and render JSON array
-    return ""
+  m.Get("/tells", func(enc encoder.Encoder, user *User) (int, []byte) {
+    // get all tells for user and render JSON array
+    tells := user.getTells()
+    return http.StatusOK, encoder.Must(enc.Encode(tells))
   })
 
-  m.Post("/tells", func(params martini.Params) string {
-    // create new tell for currentUser
-    return ""
+  m.Post("/tells", binding.Bind(Tell{}), func(enc encoder.Encoder, user *User, tell Tell) (int, []byte) {
+    // create new tell for user
+    tell = user.Tell(tell)
+    return http.StatusOK, encoder.Must(enc.Encode(tell))
   })
 
   m.Run()
