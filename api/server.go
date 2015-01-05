@@ -15,6 +15,8 @@ import (
   "github.com/go-martini/martini"
   "github.com/martini-contrib/encoder"
   "github.com/martini-contrib/binding"
+  "github.com/martini-contrib/cors"
+
   fb "github.com/huandu/facebook"
 )
 
@@ -33,7 +35,7 @@ type Tell struct {
   Id          int64   `db:"id" json:"id"`
   ToUid       string  `db:"to_uid" json:"to_uid" form:"to_uid"`
   FromUid     string  `db:"from_uid" json:"from_uid" form:"from_uid"`
-  ReporterId  int64   `db:"reporter_id" json:"reporter_id,omitempty"`
+  ReporterId  int64   `db:"reporter_id" json:"reporter_id"`
   CreatedAt   int64   `db:"created_at" json:"created_at"`
   Body        string  `db:"body" json:"body" form:"body"`
 }
@@ -98,8 +100,9 @@ func (user User) getTells() []Tell {
 
 // create new tell
 func (user User) Tell(tell Tell) Tell {
-  // set reported by current user
+  // set reported by current user & timestamp
   tell.ReporterId = user.Id
+  tell.CreatedAt = time.Now().Unix()
 
   err := dbmap.Insert(&tell)
 
@@ -110,8 +113,8 @@ func (user User) Tell(tell Tell) Tell {
   return tell
 }
 
+// do nothing
 func (tell Tell) Filter() interface{} {
-  tell.ReporterId = -1
   return tell
 }
 
@@ -122,7 +125,7 @@ func main() {
   globalApp.RedirectUri = "http://localhost:3000/auth/facebook/callback" // TODO
 
   // https://developers.facebook.com/docs/graph-api/securing-requests
-  //globalApp.EnableAppsecretProof = true
+  globalApp.EnableAppsecretProof = true
 
   // instantiate Martini
   m := martini.Classic()
@@ -132,10 +135,22 @@ func main() {
   dbmap = initDb()  
   defer dbmap.Db.Close()
 
+  // CORS
+  m.Use(cors.Allow(&cors.Options{
+    AllowOrigins:     []string{"http://localhost:*"},
+    AllowMethods:     []string{"GET", "POST"},
+    AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true,
+  }))
+
   // Authentication
   m.Use(func(c martini.Context, res http.ResponseWriter, req *http.Request) {
     accessToken := req.Header.Get("Authorization") // TODO expect "Bearer: {TOKEN}" format?
     session := globalApp.Session(accessToken)
+
+    // TODO DELETE ME
+    log.Printf("accessToken=%s", accessToken)
 
     // TODO make currentUser globally available
     // TODO add User struct and use res.Decode(&user)
@@ -184,7 +199,6 @@ func main() {
 
   m.Post("/tells", binding.Bind(Tell{}), func(enc encoder.Encoder, user *User, tell Tell) (int, []byte) {
     // create new tell for user
-    tell.ToId = 
     tell = user.Tell(tell)
     return http.StatusOK, encoder.Must(enc.Encode(tell))
   })

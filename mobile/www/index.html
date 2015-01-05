@@ -11,6 +11,7 @@
 
     <!-- ionic/angularjs js -->
     <script src="lib/ionic/js/ionic.bundle.js"></script>
+    <script src="lib/angular-resource/angular-resource.min.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
     <script src="cordova.js"></script>
@@ -31,25 +32,57 @@
       <ion-tab icon="ion-navicon" ui-sref="inbox">
         <ion-nav-view name="inbox"></ion-nav-view>
       </ion-tab>
-      <ion-tab icon="ion-plus" ui-sref="new">
-        <ion-nav-view name="new"></ion-nav-view>
+      <ion-tab icon="ion-plus" ui-sref="tell">
+        <ion-nav-view name="tell"></ion-nav-view>
       </ion-tab>
     </ion-tabs>
 
-    <script type="text/ng-template" id="inbox.html">
-      <ion-view title="Inbox">
-        <ion-content padding="true">
-          <h2>Inbox</h2>
-          <p>Here's the main route for the app.</p>
+    <script type="text/ng-template" id="login.html">
+      <ion-view title="Login" hide-nav-bar="true" show-tabs="false">
+        <ion-content has-header="false" padding="true">
+          <p>Hello world.</p>
+          <button class="button button-block button-positive">
+            Login with Facebook
+          </button>
         </ion-content>
       </ion-view>
     </script>
 
-    <script type="text/ng-template" id="new.html">
-      <ion-view title="New">
+    <script type="text/ng-template" id="inbox.html">
+      <ion-view title="Inbox">
         <ion-content padding="true">
-           <h2>Tell</h2>
-           <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facilis architecto hic officia quasi excepturi sequi deleniti maiores consectetur veritatis sint?</p>
+          <ion-list>
+            <ion-item ng-repeat="tell in tells" class="item-thumbnail-right">
+              <img src="//graph.facebook.com/{{tell.from_uid}}/picture" />
+              <p>{{tell.body}}</p>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-view>
+    </script>
+
+    <script type="text/ng-template" id="tell.html">
+      <ion-view title="Tell">
+        <ion-content padding="true">
+          <div class="list">
+            <label class="item item-input">
+              <span class="input-label">From</span>
+              <select ng-model="tell.from_uid" ng-options="friend.id as friend.name for friend in friends">
+                <option value="">From</option>
+              </select>
+            </label>
+            <label class="item item-input">
+              <span class="input-label">To</span>
+              <select ng-model="tell.to_uid" ng-options="friend.id as friend.name for friend in friends">
+                <option value="">To</option>
+              </select>
+            </label>
+            <label class="item item-input">
+              <span class="input-label">Message</span>
+              <textarea ng-model="tell.body" placeholder="Something lovely here.."></textarea>
+            </label>
+            <button ng-click="submit()" class="button button-block button-positive">Tell</button>
+          </div>
         </ion-content>
       </ion-view>
     </script>
