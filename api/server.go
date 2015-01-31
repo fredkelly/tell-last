@@ -42,7 +42,7 @@ type Tell struct {
 
 // Initialise DB and setup tables
 func initDb() *gorp.DbMap {
-  db, err := sql.Open("mysql", "root@/tell_last")
+  db, err := sql.Open("mysql", "root:qwerty@/tell_last")
   if err != nil {
     log.Printf("couldn't connect to database: %s", err)
   }

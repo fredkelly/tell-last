@@ -119,7 +119,7 @@ angular.module('tellLast', ['ionic', 'ngResource', 'ngFacebook'])
   $scope.friends = [];
   $scope.tell = new Tell();
 
-  $facebook.api('/me/friends').then(function(response) {
+  $facebook.api('/me/invitable_friends').then(function(response) {
     $scope.friends = response.data;
   }, function(error) {
     // TODO

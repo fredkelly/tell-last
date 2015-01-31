@@ -53,7 +53,7 @@
         <ion-content padding="true">
           <ion-list>
             <ion-item ng-repeat="tell in tells" class="item-thumbnail-right">
-              <img src="//graph.facebook.com/{{tell.from_uid}}/picture" />
+              <img ng-src="//graph.facebook.com/{{tell.from_uid}}/picture" />
               <p>{{tell.body}}</p>
             </ion-item>
           </ion-list>
